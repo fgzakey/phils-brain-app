@@ -26,8 +26,14 @@ jobs:
 
       # The repo ships only pubspec.yaml + lib/. Generate the android/
       # platform folder here so no Gradle boilerplate lives in git.
+      # (.metadata makes `flutter create` treat this as an existing project and
+      # keep pubspec.yaml — but back it up and restore it to be certain the
+      # dependencies are never clobbered.)
       - name: Generate platform scaffolding
-        run: flutter create --platforms=android --org com.fidelkey --project-name phils_brain_app .
+        run: |
+          cp pubspec.yaml /tmp/pubspec.yaml
+          flutter create --platforms=android --org com.fidelkey --project-name phils_brain_app .
+          cp /tmp/pubspec.yaml pubspec.yaml
 
       # Flutter's release manifest has no INTERNET permission by default —
       # without this the release APK cannot reach the server at all.
