@@ -1,0 +1,23 @@
+# Flutter/Dart/Pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+
+# The android/ platform folder is generated in CI (flutter create), never committed.
+/android/
+/ios/
+/linux/
+/macos/
+/windows/
+/web/
+
+# IDE / misc
+*.iml
+.idea/
+.vscode/
+.DS_Store
+fail.log
+sign.log
