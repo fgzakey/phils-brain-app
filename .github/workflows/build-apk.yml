@@ -32,8 +32,10 @@ jobs:
       - name: Generate platform scaffolding
         run: |
           cp pubspec.yaml /tmp/pubspec.yaml
+          cp pubspec.lock /tmp/pubspec.lock 2>/dev/null || true
           flutter create --platforms=android --org com.fidelkey --project-name phils_brain_app .
           cp /tmp/pubspec.yaml pubspec.yaml
+          cp /tmp/pubspec.lock pubspec.lock 2>/dev/null || true
 
       # Flutter's release manifest has no INTERNET permission by default —
       # without this the release APK cannot reach the server at all.

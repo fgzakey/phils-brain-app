@@ -24,3 +24,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+# jni 1.0.1 ships a broken android/build.gradle (calls kotlin() unavailable
+# in that project) - pin until upstream fixes it.
+dependency_overrides:
+  jni: 1.0.0
