@@ -1,10 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../app_state.dart';
 import '../main.dart';
-import '../md_zoom.dart';
+import '../md_toc.dart';
+import '../md_toc_view.dart';
 import '../models.dart';
 
 /// Syntopical synthesis essays — the library's living Adlerian essays that
@@ -90,6 +95,11 @@ class _EssayViewer extends StatelessWidget {
               showSnack(context, 'Essay copied.');
             },
           ),
+          IconButton(
+            tooltip: 'Export .md',
+            icon: const Icon(Icons.ios_share),
+            onPressed: () => _exportMd(context),
+          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -97,9 +107,24 @@ class _EssayViewer extends StatelessWidget {
           ? const Center(child: Text('This essay has no text yet.'))
           : Padding(
               padding: const EdgeInsets.all(16),
-              child: ZoomMd(data: essay.body, scrollable: true),
+              child: MdWithToc(data: essay.body),
             ),
     );
+  }
+
+  Future<void> _exportMd(BuildContext context) async {
+    final md = withTitleHeading(essay.body, essay.title);
+    final name = downloadName(
+      title: essay.title,
+      kind: 'Synthesis Essay',
+      date: DateTime.tryParse(essay.updatedAt ?? ''),
+      ext: 'md',
+    );
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/$name');
+    await file.writeAsString(md);
+    await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'text/markdown')], subject: essay.title);
   }
 }
 

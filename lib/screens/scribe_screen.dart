@@ -11,6 +11,7 @@ import '../app_state.dart';
 import '../main.dart';
 import '../models.dart';
 import '../scribe_svg.dart';
+import '../md_toc.dart';
 
 /// Visual Scribe — turn a syntopical essay into a hand-drawn board (whiteboard,
 /// memory palace, or knowledge-graph map) with embedded AI-painted art. A
@@ -130,8 +131,8 @@ class _ScribeScreenState extends State<ScribeScreen> {
     if (svg.isEmpty) return;
     final dir = await getTemporaryDirectory();
     final name =
-        (_essay?.title ?? 'board').replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '-');
-    final file = File('${dir.path}/$name.svg');
+        downloadName(title: _essay?.title ?? 'Whiteboard', kind: 'Whiteboard', ext: 'svg');
+    final file = File('${dir.path}/$name');
     await file.writeAsString(svg);
     await Share.shareXFiles([XFile(file.path, mimeType: 'image/svg+xml')],
         subject: _essay?.title);
