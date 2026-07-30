@@ -113,7 +113,14 @@ class _EssayViewer extends StatelessWidget {
   }
 
   Future<void> _exportMd(BuildContext context) async {
-    final md = withTitleHeading(essay.body, essay.title);
+    // Same packaging as the dashboard's essay download: canonical title,
+    // provenance comment and a bidirectional Table of Contents.
+    final md = packageMd(
+      essay.body,
+      title: essay.title,
+      kind: 'Syntopical synthesis essay',
+      processed: DateTime.tryParse(essay.updatedAt ?? ''),
+    );
     final name = downloadName(
       title: essay.title,
       kind: 'Synthesis Essay',
