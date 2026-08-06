@@ -6,9 +6,9 @@ import '../main.dart';
 import '../md_zoom.dart';
 import '../models.dart';
 
-/// Praxis spine — themes → goals → projects → tasks, linked by serves/enacts
-/// edges. This is the skeleton for the cognitive/planning tools: browse the
-/// spine and add goals, projects and tasks hung off any node.
+/// Praxis — two modes over the same idea. The Spine tab browses themes →
+/// goals → projects → tasks linked by serves/enacts edges; the Insights tab
+/// reviews every Q4 flourishing insight across the library as flash-cards.
 class PraxisScreen extends StatefulWidget {
   const PraxisScreen({super.key});
 
@@ -16,15 +16,31 @@ class PraxisScreen extends StatefulWidget {
   State<PraxisScreen> createState() => _PraxisScreenState();
 }
 
-class _PraxisScreenState extends State<PraxisScreen> {
+class _PraxisScreenState extends State<PraxisScreen>
+    with SingleTickerProviderStateMixin {
   bool _loadedOnce = false;
+  late final TabController _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_loadedOnce) {
       _loadedOnce = true;
-      Future.microtask(() => context.read<AppState>().refreshPraxis());
+      Future.microtask(() {
+        if (mounted) context.read<AppState>().refreshPraxis();
+      });
     }
   }
 
@@ -40,6 +56,35 @@ class _PraxisScreenState extends State<PraxisScreen> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Praxis'),
+        actions: [
+          const TextSizeButtons(),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _tabs.index == 0
+                ? (state.loadingPraxis ? null : state.refreshPraxis())
+                : (state.loadingInsights ? null : state.refreshInsights()),
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabs,
+          tabs: const [Tab(text: 'Spine'), Tab(text: 'Insights')],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabs,
+        children: [
+          _spineBody(context, state),
+          const InsightsTab(),
+        ],
+      ),
+    );
+  }
+
+  Widget _spineBody(BuildContext context, AppState state) {
     final themes = state.praxisNodes.where((n) => n.nodeType == 'theme').toList();
     // Goals whose parent isn't in the set show at the top level too.
     final topGoals = state.praxisNodes.where((n) {
@@ -50,18 +95,7 @@ class _PraxisScreenState extends State<PraxisScreen> {
       return !hasThemeParent;
     }).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Praxis'),
-        actions: [
-          const TextSizeButtons(),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: state.loadingPraxis ? null : () => state.refreshPraxis(),
-          ),
-        ],
-      ),
-      body: Builder(builder: (context) {
+    return Builder(builder: (context) {
         if (state.loadingPraxis && state.praxisNodes.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -102,8 +136,7 @@ class _PraxisScreenState extends State<PraxisScreen> {
             ],
           ),
         );
-      }),
-    );
+    });
   }
 
   Widget _node(BuildContext context, AppState state, PraxisNode n, int depth) {
@@ -218,6 +251,232 @@ class _PraxisScreenState extends State<PraxisScreen> {
               const SizedBox(height: 8),
               ZoomMd(data: n.body),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Flash-card review of every Q4 flourishing insight across the library
+/// (/api/graph/insights). Filter by theme and source, swipe through the deck,
+/// tap a card to reveal where it came from.
+class InsightsTab extends StatefulWidget {
+  const InsightsTab({super.key});
+
+  @override
+  State<InsightsTab> createState() => _InsightsTabState();
+}
+
+class _InsightsTabState extends State<InsightsTab> {
+  bool _loadedOnce = false;
+  String? _theme; // slug, null = all
+  String? _source; // source title, null = all
+  final Set<int> _revealed = {};
+  final PageController _pager = PageController();
+
+  // TabBarView builds this tab the first time it is shown, so loading here
+  // keeps Insights lazy: no request until the tab is opened.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loadedOnce) {
+      _loadedOnce = true;
+      Future.microtask(() {
+        if (!mounted) return;
+        final s = context.read<AppState>();
+        if (s.insights == null) s.refreshInsights();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pager.dispose();
+    super.dispose();
+  }
+
+  void _setFilter({String? theme, bool themeSet = false, String? source, bool sourceSet = false}) {
+    setState(() {
+      if (themeSet) _theme = theme;
+      if (sourceSet) _source = source;
+      _revealed.clear();
+    });
+    if (_pager.hasClients) _pager.jumpToPage(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final ins = state.insights;
+
+    if (state.loadingInsights && ins == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.insightsError != null && ins == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Could not load insights:\n${state.insightsError}',
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () => state.refreshInsights(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (ins == null || ins.cards.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'No insights yet.\nRun the Adler prompts on a book or video and its Question 4 insights will land here.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    final cards = ins.cards
+        .where((c) => _theme == null || c.theme == _theme)
+        .where((c) => _source == null || c.source == _source)
+        .toList();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${ins.total} insights · ${ins.sourceCount} sources',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              if (_theme != null || _source != null)
+                TextButton(
+                  onPressed: () =>
+                      _setFilter(theme: null, themeSet: true, source: null, sourceSet: true),
+                  child: const Text('Clear filters'),
+                ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            children: [
+              for (final t in ins.themes)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  child: ChoiceChip(
+                    label: Text('${t.title} (${t.count})'),
+                    selected: _theme == t.slug,
+                    onSelected: (sel) =>
+                        _setFilter(theme: sel ? t.slug : null, themeSet: true),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            children: [
+              for (final b in ins.books)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  child: ChoiceChip(
+                    label: Text('${b.source} (${b.count})'),
+                    selected: _source == b.source,
+                    onSelected: (sel) =>
+                        _setFilter(source: sel ? b.source : null, sourceSet: true),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: cards.isEmpty
+              ? const Center(child: Text('No cards match these filters.'))
+              : PageView.builder(
+                  controller: _pager,
+                  itemCount: cards.length,
+                  itemBuilder: (context, i) => _card(context, cards, i),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _card(BuildContext context, List<InsightCard> cards, int i) {
+    final c = cards[i];
+    final revealed = _revealed.contains(i);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => setState(() {
+            revealed ? _revealed.remove(i) : _revealed.add(i);
+          }),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('${i + 1} / ${cards.length}',
+                    style: theme.textTheme.bodySmall),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Text(c.text, style: theme.textTheme.titleMedium),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (revealed)
+                  Row(
+                    children: [
+                      Icon(
+                        c.kind == 'video'
+                            ? Icons.ondemand_video_outlined
+                            : Icons.menu_book_outlined,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(c.source,
+                            style: theme.textTheme.bodyMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      const SizedBox(width: 8),
+                      Chip(
+                        label: Text(c.themeTitle),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  )
+                else
+                  Text('Tap to reveal source',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall),
+              ],
+            ),
           ),
         ),
       ),

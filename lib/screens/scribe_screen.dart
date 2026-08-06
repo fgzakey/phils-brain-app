@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io' show File;
 
 import 'package:flutter/material.dart';
@@ -41,6 +40,7 @@ class _ScribeScreenState extends State<ScribeScreen> {
     super.initState();
     // Make sure essays are available to pick from.
     Future.microtask(() {
+      if (!mounted) return;
       final s = context.read<AppState>();
       if (s.essays.isEmpty) s.refreshEssays();
     });

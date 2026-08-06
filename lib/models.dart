@@ -200,6 +200,214 @@ class PraxisEdge {
       );
 }
 
+/// One Q4 flourishing insight from /api/graph/insights.
+class InsightCard {
+  final String text;
+  final String source; // book or video title
+  final String kind; // book | video
+  final String theme; // slug, "untagged" when the sweep could not tag it
+  final String themeTitle;
+
+  InsightCard({
+    required this.text,
+    required this.source,
+    required this.kind,
+    required this.theme,
+    required this.themeTitle,
+  });
+
+  factory InsightCard.fromJson(Map<String, dynamic> j) => InsightCard(
+        text: j['text']?.toString() ?? '',
+        source: j['source']?.toString() ?? '',
+        kind: j['kind']?.toString() ?? 'book',
+        theme: j['theme']?.toString() ?? 'untagged',
+        themeTitle: j['themeTitle']?.toString() ?? 'Untagged',
+      );
+}
+
+class InsightTheme {
+  final String slug;
+  final String title;
+  final int count;
+  InsightTheme({required this.slug, required this.title, required this.count});
+  factory InsightTheme.fromJson(Map<String, dynamic> j) => InsightTheme(
+        slug: j['slug']?.toString() ?? '',
+        title: j['title']?.toString() ?? '',
+        count: (j['count'] as num?)?.toInt() ?? 0,
+      );
+}
+
+class InsightSource {
+  final String source;
+  final int count;
+  InsightSource({required this.source, required this.count});
+  factory InsightSource.fromJson(Map<String, dynamic> j) => InsightSource(
+        source: j['source']?.toString() ?? '',
+        count: (j['count'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// The whole /api/graph/insights payload.
+class InsightsResponse {
+  final List<InsightCard> cards;
+  final List<InsightTheme> themes;
+  final List<InsightSource> books;
+  final int total;
+  final int sourceCount;
+
+  InsightsResponse({
+    this.cards = const [],
+    this.themes = const [],
+    this.books = const [],
+    this.total = 0,
+    this.sourceCount = 0,
+  });
+
+  factory InsightsResponse.fromJson(Map<String, dynamic> j) => InsightsResponse(
+        cards: ((j['cards'] as List?) ?? [])
+            .map((c) => InsightCard.fromJson(Map<String, dynamic>.from(c)))
+            .toList(),
+        themes: ((j['themes'] as List?) ?? [])
+            .map((t) => InsightTheme.fromJson(Map<String, dynamic>.from(t)))
+            .toList(),
+        books: ((j['books'] as List?) ?? [])
+            .map((b) => InsightSource.fromJson(Map<String, dynamic>.from(b)))
+            .toList(),
+        total: (j['total'] as num?)?.toInt() ?? 0,
+        sourceCount: (j['sourceCount'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// A source (book or video) that has at least one mnemonic scene
+/// (/api/mnemonic?sources=1).
+class MnemonicSource {
+  final String sourceKind; // book | video
+  final String sourceId;
+  final String sourceTitle;
+  final int imageCount;
+  final int boardCount;
+  final String? latest;
+
+  MnemonicSource({
+    required this.sourceKind,
+    required this.sourceId,
+    required this.sourceTitle,
+    this.imageCount = 0,
+    this.boardCount = 0,
+    this.latest,
+  });
+
+  factory MnemonicSource.fromJson(Map<String, dynamic> j) => MnemonicSource(
+        sourceKind: j['source_kind']?.toString() ?? 'book',
+        sourceId: j['source_id']?.toString() ?? '',
+        sourceTitle: j['source_title']?.toString() ?? '(untitled source)',
+        imageCount: (j['image_count'] as num?)?.toInt() ?? 0,
+        boardCount: (j['board_count'] as num?)?.toInt() ?? 0,
+        latest: j['latest']?.toString(),
+      );
+}
+
+/// One station of a mnemonic scene. [x]/[y] are 0..1 fractions of the SCENE
+/// area's width/height (not the composed canvas, which extends a text panel to
+/// the right). placed == "vision" means the vision pass located the station;
+/// "legend" means it fell back and the pin coordinates are meaningless.
+class MnemonicHotspot {
+  final int i;
+  final String heading;
+  final String theme;
+  final String colorHex;
+  final List<String> points;
+  final double? x;
+  final double? y;
+  final String placed; // vision | legend
+
+  MnemonicHotspot({
+    required this.i,
+    required this.heading,
+    this.theme = '',
+    this.colorHex = '',
+    this.points = const [],
+    this.x,
+    this.y,
+    this.placed = 'legend',
+  });
+
+  factory MnemonicHotspot.fromJson(Map<String, dynamic> j) => MnemonicHotspot(
+        i: (j['i'] as num?)?.toInt() ?? 0,
+        heading: j['heading']?.toString() ?? '',
+        theme: j['theme']?.toString() ?? '',
+        colorHex: j['color']?.toString() ?? '',
+        points: ((j['points'] as List?) ?? []).map((p) => p.toString()).toList(),
+        x: (j['x'] as num?)?.toDouble(),
+        y: (j['y'] as num?)?.toDouble(),
+        placed: j['placed']?.toString() ?? 'legend',
+      );
+}
+
+/// A mnemonic scene row. List rows carry [imageChars] (a length) instead of
+/// the image; the single-row fetch carries the full base64 [image].
+class MnemonicScene {
+  final dynamic id;
+  final String sourceKind;
+  final String sourceId;
+  final String sourceTitle;
+  final String boardKey;
+  final String variant;
+  final String? style;
+  final String? styleName;
+  final String? model;
+  final int? width;
+  final int? height;
+  final String? sourceResolution;
+  final List<MnemonicHotspot> hotspots;
+  final String? createdAt;
+  final int imageChars;
+  final String? image; // data URL, only on the ?id= fetch
+
+  MnemonicScene({
+    this.id,
+    required this.sourceKind,
+    required this.sourceId,
+    required this.sourceTitle,
+    required this.boardKey,
+    this.variant = 'clean',
+    this.style,
+    this.styleName,
+    this.model,
+    this.width,
+    this.height,
+    this.sourceResolution,
+    this.hotspots = const [],
+    this.createdAt,
+    this.imageChars = 0,
+    this.image,
+  });
+
+  factory MnemonicScene.fromJson(Map<String, dynamic> j) {
+    final image = j['image']?.toString();
+    return MnemonicScene(
+      id: j['id'],
+      sourceKind: j['source_kind']?.toString() ?? 'book',
+      sourceId: j['source_id']?.toString() ?? '',
+      sourceTitle: j['source_title']?.toString() ?? '(untitled source)',
+      boardKey: j['board_key']?.toString() ?? '',
+      variant: j['variant']?.toString() ?? 'clean',
+      style: j['style']?.toString(),
+      styleName: j['style_name']?.toString(),
+      model: j['model']?.toString(),
+      width: (j['width'] as num?)?.toInt(),
+      height: (j['height'] as num?)?.toInt(),
+      sourceResolution: j['source_resolution']?.toString(),
+      hotspots: ((j['hotspots'] as List?) ?? [])
+          .map((h) => MnemonicHotspot.fromJson(Map<String, dynamic>.from(h)))
+          .toList(),
+      createdAt: j['created_at']?.toString(),
+      imageChars: (j['image_chars'] as num?)?.toInt() ?? image?.length ?? 0,
+      image: image,
+    );
+  }
+}
+
 class ModelInfo {
   final String id;
   final String name;

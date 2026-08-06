@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'app_state.dart';
 import 'screens/essays_screen.dart';
 import 'screens/graph_screen.dart';
+import 'screens/mnemonic_screen.dart';
 import 'screens/praxis_screen.dart';
 import 'screens/scribe_screen.dart';
 import 'screens/settings_screen.dart';
@@ -75,11 +76,12 @@ class _HomeShellState extends State<HomeShell> {
       });
     }
 
-    final screens = const [
+    const screens = [
       EssaysScreen(),
       GraphScreen(),
       PraxisScreen(),
       ScribeScreen(),
+      MnemonicScreen(),
       SettingsScreen(),
     ];
 
@@ -93,6 +95,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(icon: Icon(Icons.hub_outlined), label: 'Graph'),
           NavigationDestination(icon: Icon(Icons.checklist_outlined), label: 'Praxis'),
           NavigationDestination(icon: Icon(Icons.draw_outlined), label: 'Scribe'),
+          NavigationDestination(icon: Icon(Icons.castle_outlined), label: 'Palace'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
         ],
       ),

@@ -26,6 +26,8 @@ class AppState extends ChangeNotifier {
   List<PraxisNode> praxisNodes = [];
   List<PraxisEdge> praxisEdges = [];
   List<ModelInfo> models = [];
+  InsightsResponse? insights;
+  List<MnemonicSource> mnemonicSources = [];
 
   bool loadingEssays = false;
   String? essaysError;
@@ -33,6 +35,10 @@ class AppState extends ChangeNotifier {
   String? graphError;
   bool loadingPraxis = false;
   String? praxisError;
+  bool loadingInsights = false;
+  String? insightsError;
+  bool loadingMnemonicSources = false;
+  String? mnemonicSourcesError;
 
   Future<void> loadPrefs() async {
     final p = await SharedPreferences.getInstance();
@@ -151,6 +157,36 @@ class AppState extends ChangeNotifier {
       praxisError = e.toString();
     }
     loadingPraxis = false;
+    notifyListeners();
+  }
+
+  // ---- Praxis Insights ----
+
+  Future<void> refreshInsights() async {
+    loadingInsights = true;
+    insightsError = null;
+    notifyListeners();
+    try {
+      insights = await api.getInsights();
+    } catch (e) {
+      insightsError = e.toString();
+    }
+    loadingInsights = false;
+    notifyListeners();
+  }
+
+  // ---- Mnemonic scenes ----
+
+  Future<void> refreshMnemonicSources() async {
+    loadingMnemonicSources = true;
+    mnemonicSourcesError = null;
+    notifyListeners();
+    try {
+      mnemonicSources = await api.listMnemonicSources();
+    } catch (e) {
+      mnemonicSourcesError = e.toString();
+    }
+    loadingMnemonicSources = false;
     notifyListeners();
   }
 

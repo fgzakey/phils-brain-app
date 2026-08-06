@@ -126,6 +126,48 @@ class ApiClient {
     _json(res);
   }
 
+  // ---- Praxis Insights (Q4 flourishing flash-cards) ----
+
+  Future<InsightsResponse> getInsights() async {
+    final res = await http.get(_uri('/api/graph/insights'), headers: _headers);
+    return InsightsResponse.fromJson(_json(res));
+  }
+
+  // ---- Mnemonic scenes (read-only; generation stays on the web app) ----
+
+  Future<List<MnemonicSource>> listMnemonicSources() async {
+    final res =
+        await http.get(_uri('/api/mnemonic', {'sources': '1'}), headers: _headers);
+    final j = _json(res);
+    return ((j['sources'] as List?) ?? [])
+        .map((s) => MnemonicSource.fromJson(Map<String, dynamic>.from(s)))
+        .toList();
+  }
+
+  /// Metadata only — the server deliberately withholds the image bytes here.
+  Future<List<MnemonicScene>> listMnemonicScenes(
+      String sourceKind, String sourceId) async {
+    final res = await http.get(
+        _uri('/api/mnemonic', {'sourceKind': sourceKind, 'sourceId': sourceId}),
+        headers: _headers);
+    final j = _json(res);
+    return ((j['images'] as List?) ?? [])
+        .map((m) => MnemonicScene.fromJson(Map<String, dynamic>.from(m)))
+        .toList();
+  }
+
+  /// The full row including the multi-MB base64 image — fetch on explicit tap
+  /// only, never eagerly from a list.
+  Future<MnemonicScene> getMnemonicScene(dynamic id) async {
+    final res = await http
+        .get(_uri('/api/mnemonic', {'id': '$id'}), headers: _headers)
+        .timeout(const Duration(minutes: 3));
+    final j = _json(res);
+    final row = j['image'];
+    if (row == null) throw ApiException('Scene not found.', 404);
+    return MnemonicScene.fromJson(Map<String, dynamic>.from(row));
+  }
+
   // ---- Models & chat (for Visual Scribe) ----
 
   Future<List<ModelInfo>> listModels() async {
