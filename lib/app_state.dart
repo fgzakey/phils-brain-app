@@ -27,6 +27,7 @@ class AppState extends ChangeNotifier {
   List<PraxisEdge> praxisEdges = [];
   List<ModelInfo> models = [];
   InsightsResponse? insights;
+  SectionsResponse? sections;
   List<MnemonicSource> mnemonicSources = [];
 
   bool loadingEssays = false;
@@ -37,6 +38,8 @@ class AppState extends ChangeNotifier {
   String? praxisError;
   bool loadingInsights = false;
   String? insightsError;
+  bool loadingSections = false;
+  String? sectionsError;
   bool loadingMnemonicSources = false;
   String? mnemonicSourcesError;
 
@@ -160,7 +163,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---- Praxis Insights ----
+  // ---- Insights (under Syntopical essays) ----
 
   Future<void> refreshInsights() async {
     loadingInsights = true;
@@ -173,6 +176,44 @@ class AppState extends ChangeNotifier {
     }
     loadingInsights = false;
     notifyListeners();
+  }
+
+  // ---- Essay sections + their review queue ----
+
+  Future<void> refreshSections() async {
+    loadingSections = true;
+    sectionsError = null;
+    notifyListeners();
+    try {
+      sections = await api.getSections();
+    } catch (e) {
+      sectionsError = e.toString();
+    }
+    loadingSections = false;
+    notifyListeners();
+  }
+
+  /// Grade a movement, then reload so `due`, `reviewCount` and the interval
+  /// come back from the server rather than being guessed at locally — the
+  /// doubling curve lives in one place, lib/pg.js.
+  Future<void> reviewSection(SectionCard c, {bool again = false}) async {
+    try {
+      await api.reviewSection(c.essaySlug, c.key, again: again);
+      await refreshSections();
+    } catch (e) {
+      sectionsError = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> resetSectionReviews() async {
+    try {
+      await api.resetSectionReviews();
+      await refreshSections();
+    } catch (e) {
+      sectionsError = e.toString();
+      notifyListeners();
+    }
   }
 
   // ---- Mnemonic scenes ----

@@ -126,11 +126,41 @@ class ApiClient {
     _json(res);
   }
 
-  // ---- Praxis Insights (Q4 flourishing flash-cards) ----
+  // ---- Insights (Q4 flourishing flash-cards) ----
+  // Lives under Syntopical essays, not Praxis, matching the web dashboards.
 
   Future<InsightsResponse> getInsights() async {
     final res = await http.get(_uri('/api/graph/insights'), headers: _headers);
     return InsightsResponse.fromJson(_json(res));
+  }
+
+  // ---- Essay sections (movements of the synthesis essays + their review
+  // schedule; state lives in the server's essay_section_reviews table) ----
+
+  Future<SectionsResponse> getSections() async {
+    final res = await http.get(_uri('/api/graph/sections'), headers: _headers);
+    return SectionsResponse.fromJson(_json(res));
+  }
+
+  /// Grade one movement. `again: true` resets its interval instead of doubling.
+  Future<void> reviewSection(String essaySlug, String key,
+      {bool again = false}) async {
+    final res = await http.post(
+      _uri('/api/graph/sections'),
+      headers: _headers,
+      body: jsonEncode({'essaySlug': essaySlug, 'key': key, 'again': again}),
+    );
+    _json(res);
+  }
+
+  /// Forget every review date. The essays themselves are untouched.
+  Future<void> resetSectionReviews() async {
+    final res = await http.post(
+      _uri('/api/graph/sections'),
+      headers: _headers,
+      body: jsonEncode({'reset': true}),
+    );
+    _json(res);
   }
 
   // ---- Mnemonic scenes (read-only; generation stays on the web app) ----
