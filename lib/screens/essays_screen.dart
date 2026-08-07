@@ -148,7 +148,7 @@ class _EssayList extends StatelessWidget {
       onRefresh: () => state.refreshEssays(),
       child: ListView.separated(
         itemCount: state.essays.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, i) {
           final e = state.essays[i];
           return ListTile(
@@ -204,6 +204,12 @@ class _EssayViewer extends StatelessWidget {
   }
 
   Future<void> _exportMd(BuildContext context) async {
+    // Read the render box BEFORE any await: it is the iPad share-sheet anchor,
+    // and touching the BuildContext after an async gap throws if the widget
+    // was disposed while the file was being written.
+    final box = context.findRenderObject() as RenderBox?;
+    final origin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
     // Same packaging as the dashboard's essay download: canonical title,
     // provenance comment and a bidirectional Table of Contents.
     final md = packageMd(
@@ -221,8 +227,13 @@ class _EssayViewer extends StatelessWidget {
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$name');
     await file.writeAsString(md);
-    await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'text/markdown')], subject: essay.title);
+    // share_plus 13 removed the static Share.shareXFiles() in favour of
+    // SharePlus.instance.share(ShareParams(...)).
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile(file.path, mimeType: 'text/markdown')],
+      subject: essay.title,
+      sharePositionOrigin: origin,
+    ));
   }
 }
 

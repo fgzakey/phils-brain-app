@@ -129,13 +129,23 @@ class _ScribeScreenState extends State<ScribeScreen> {
   Future<void> _shareSvg() async {
     final svg = (_rec?['svg'] ?? '').toString();
     if (svg.isEmpty) return;
+    // The iPad share-sheet anchor, read before any await — using the
+    // BuildContext after an async gap throws if the widget was disposed.
+    final box = context.findRenderObject() as RenderBox?;
+    final origin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
     final dir = await getTemporaryDirectory();
     final name =
         downloadName(title: _essay?.title ?? 'Whiteboard', kind: 'Whiteboard', ext: 'svg');
     final file = File('${dir.path}/$name');
     await file.writeAsString(svg);
-    await Share.shareXFiles([XFile(file.path, mimeType: 'image/svg+xml')],
-        subject: _essay?.title);
+    // share_plus 13: SharePlus.instance.share(ShareParams(...)) replaced the
+    // static Share.shareXFiles().
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile(file.path, mimeType: 'image/svg+xml')],
+      subject: _essay?.title,
+      sharePositionOrigin: origin,
+    ));
   }
 
   Widget _board(String svg) {

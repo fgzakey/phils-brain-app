@@ -234,7 +234,7 @@ class InsightCard {
 }
 
 /// One analysis run that contributed insights — the `sources` map on
-/// /api/graph/insights, keyed by "<kind>:<title>". Sent once per analysis
+/// /api/graph/insights, keyed by `"<kind>:<title>"`. Sent once per analysis
 /// rather than copied onto every card.
 class InsightRun {
   final String key;

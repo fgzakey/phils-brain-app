@@ -104,7 +104,7 @@ class _GraphScreenState extends State<GraphScreen> {
               }
               return ListView.separated(
                 itemCount: state.nodes.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, i) {
                   final n = state.nodes[i];
                   return ListTile(
