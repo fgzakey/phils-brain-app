@@ -27,3 +27,7 @@ The repo ships only `pubspec.yaml` + `lib/`; CI runs `flutter create
 1. Server URL: the Phils Library Space's direct URL (e.g. `https://fgza-book-dashboard.hf.space`).
 2. App password: the same `APP_PASSWORD` as the web login.
 3. Save & test connection, then pick a model for Visual Scribe.
+
+## Developing
+
+Start with [AGENTS.md](AGENTS.md) — project conventions and institutional knowledge, shared by humans and every coding harness (Claude Code reads it through CLAUDE.md; Codex and Hermes read it natively). Then see [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the PR flow.
