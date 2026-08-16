@@ -21,3 +21,10 @@ build/
 .DS_Store
 fail.log
 sign.log
+.env
+!.env.example
+!*.sops.*
+/output/
+*.pem
+*.key
+.claude/settings.local.json
