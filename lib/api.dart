@@ -261,6 +261,24 @@ class ApiClient {
     if (url == null || url.isEmpty) throw ApiException('No image returned.', 502);
     return url;
   }
+
+  // ---- Workspaces / Databases ----
+
+  Future<WorkspacesResponse> listWorkspaces() async {
+    final res = await http.get(_uri('/api/db/workspaces'), headers: _headers);
+    return WorkspacesResponse.fromJson(_json(res));
+  }
+
+  Future<void> switchWorkspace(String name, {String? owner}) async {
+    final res = await http.post(_uri('/api/db/workspaces'),
+        headers: _headers,
+        body: jsonEncode({
+          'action': 'switch',
+          'name': name,
+          'owner': ?owner,
+        }));
+    _json(res);
+  }
 }
 
 class ApiException implements Exception {

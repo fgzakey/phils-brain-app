@@ -662,3 +662,82 @@ const scribeArtStyles = [
   ScribeOption('retro', 'Retro-futurist poster'),
   ScribeOption('chalk', 'Chalkboard chiaroscuro'),
 ];
+
+// ---- Workspaces / Multi-user databases ----
+
+class WorkspaceInfo {
+  final String? owner; // null for canon
+  final String name;
+  final String kind; // canon | fork | clean | external
+  final String label;
+  final bool isCanon;
+  final bool active;
+  final bool mine;
+  final bool canWrite;
+  final bool canDelete;
+  final int books;
+  final int videos;
+  final int results;
+  final int boards;
+  final int scenes;
+
+  WorkspaceInfo({
+    this.owner,
+    required this.name,
+    this.kind = 'fork',
+    required this.label,
+    this.isCanon = false,
+    this.active = false,
+    this.mine = true,
+    this.canWrite = true,
+    this.canDelete = false,
+    this.books = 0,
+    this.videos = 0,
+    this.results = 0,
+    this.boards = 0,
+    this.scenes = 0,
+  });
+
+  factory WorkspaceInfo.fromJson(Map<String, dynamic> j) => WorkspaceInfo(
+        owner: j['owner'] as String?,
+        name: j['name']?.toString() ?? 'canon',
+        kind: j['kind']?.toString() ?? 'canon',
+        label: j['label']?.toString() ?? (j['name']?.toString() ?? 'canon'),
+        isCanon: j['isCanon'] as bool? ?? (j['kind'] == 'canon'),
+        active: j['active'] as bool? ?? false,
+        mine: j['mine'] as bool? ?? true,
+        canWrite: j['canWrite'] as bool? ?? true,
+        canDelete: j['canDelete'] as bool? ?? false,
+        books: (j['books'] as num?)?.toInt() ?? 0,
+        videos: (j['videos'] as num?)?.toInt() ?? 0,
+        results: (j['results'] as num?)?.toInt() ?? 0,
+        boards: (j['boards'] as num?)?.toInt() ?? 0,
+        scenes: (j['scenes'] as num?)?.toInt() ?? 0,
+      );
+}
+
+class WorkspacesResponse {
+  final String member;
+  final bool admin;
+  final WorkspaceInfo? active;
+  final List<WorkspaceInfo> workspaces;
+
+  WorkspacesResponse({
+    this.member = 'admin',
+    this.admin = true,
+    this.active,
+    this.workspaces = const [],
+  });
+
+  factory WorkspacesResponse.fromJson(Map<String, dynamic> j) => WorkspacesResponse(
+        member: j['member']?.toString() ?? 'admin',
+        admin: j['admin'] as bool? ?? false,
+        active: j['active'] is Map
+            ? WorkspaceInfo.fromJson(Map<String, dynamic>.from(j['active']))
+            : null,
+        workspaces: ((j['workspaces'] as List?) ?? [])
+            .map((w) => WorkspaceInfo.fromJson(Map<String, dynamic>.from(w)))
+            .toList(),
+      );
+}
+

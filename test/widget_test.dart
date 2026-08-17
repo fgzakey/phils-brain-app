@@ -28,7 +28,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Essays'), findsOneWidget);
-    expect(find.text('Praxis'), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(NavigationBar), matching: find.text('Essays')),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(NavigationBar), matching: find.text('Praxis')),
+        findsOneWidget);
   });
 }
