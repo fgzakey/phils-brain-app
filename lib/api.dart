@@ -12,7 +12,15 @@ class ApiClient {
   String password;
   String apiKey;
 
-  ApiClient({this.baseUrl = '', this.password = '', this.apiKey = ''});
+  /// Optional Google Gemini API key.
+  String geminiApiKey;
+
+  ApiClient({
+    this.baseUrl = '',
+    this.password = '',
+    this.apiKey = '',
+    this.geminiApiKey = '',
+  });
 
   bool get configured => baseUrl.isNotEmpty;
 
@@ -122,8 +130,8 @@ class ApiClient {
           'servesSlug': servesSlug,
           // Dart 3.10 null-aware map elements: the entry is omitted when the
           // VALUE is null, so the `?` goes on the value, not the key.
-          'enactsSlug': ?enactsSlug,
-          'body': ?body,
+          if (enactsSlug != null) 'enactsSlug': enactsSlug,
+          if (body != null) 'body': body,
         }));
     _json(res);
   }
@@ -234,6 +242,7 @@ class ApiClient {
               'artStyle': artStyle,
               'temperature': temperature,
               if (apiKey.isNotEmpty) 'apiKey': apiKey,
+              if (geminiApiKey.isNotEmpty) 'geminiApiKey': geminiApiKey,
             }))
         .timeout(const Duration(minutes: 6));
     return _json(res);
@@ -254,6 +263,7 @@ class ApiClient {
               'artStyle': artStyle,
               if (imageModel != null && imageModel.isNotEmpty) 'imageModel': imageModel,
               if (apiKey.isNotEmpty) 'apiKey': apiKey,
+              if (geminiApiKey.isNotEmpty) 'geminiApiKey': geminiApiKey,
             }))
         .timeout(const Duration(minutes: 4));
     final j = _json(res);

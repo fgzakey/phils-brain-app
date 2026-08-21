@@ -627,9 +627,49 @@ class MnemonicScene {
 class ModelInfo {
   final String id;
   final String name;
-  ModelInfo({required this.id, required this.name});
-  factory ModelInfo.fromJson(Map<String, dynamic> j) =>
-      ModelInfo(id: j['id'] as String, name: j['name'] as String? ?? j['id'] as String);
+  final int? context;
+  final String? promptPrice;
+  final String? completionPrice;
+  final List<String> inputModalities;
+  final List<String> outputModalities;
+  final String provider;
+
+  ModelInfo({
+    required this.id,
+    required this.name,
+    this.context,
+    this.promptPrice,
+    this.completionPrice,
+    this.inputModalities = const [],
+    this.outputModalities = const [],
+    this.provider = 'openrouter',
+  });
+
+  bool get vision => inputModalities.contains('image');
+  bool get isGoogle =>
+      provider == 'google' ||
+      id.startsWith('google/') ||
+      id.startsWith('gemini') ||
+      id.startsWith('imagen');
+
+  factory ModelInfo.fromJson(Map<String, dynamic> j) => ModelInfo(
+        id: j['id'] as String,
+        name: j['name'] as String? ?? j['id'] as String,
+        context: (j['context'] as num?)?.toInt(),
+        promptPrice: j['promptPrice']?.toString(),
+        completionPrice: j['completionPrice']?.toString(),
+        inputModalities: ((j['inputModalities'] as List?) ?? [])
+            .map((e) => e.toString())
+            .toList(),
+        outputModalities: ((j['outputModalities'] as List?) ?? [])
+            .map((e) => e.toString())
+            .toList(),
+        provider: j['provider']?.toString() ??
+            ((j['id']?.toString().startsWith('gemini') == true ||
+                    j['id']?.toString().startsWith('google/') == true)
+                ? 'google'
+                : 'openrouter'),
+      );
 }
 
 class ChatResponse {
