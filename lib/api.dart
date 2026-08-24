@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -270,6 +271,41 @@ class ApiClient {
     final url = j['url'] as String?;
     if (url == null || url.isEmpty) throw ApiException('No image returned.', 502);
     return url;
+  }
+
+  // ---- TTS / Audio Narration ----
+
+  Future<Uint8List> generateTts({
+    required String text,
+    String? model,
+    String? voice,
+    String? style,
+  }) async {
+    final res = await http
+        .post(_uri('/api/tts'),
+            headers: _headers,
+            body: jsonEncode({
+              'text': text,
+              if (model != null && model.isNotEmpty) 'model': model,
+              if (voice != null && voice.isNotEmpty) 'voice': voice,
+              if (style != null && style.isNotEmpty) 'style': style,
+              if (apiKey.isNotEmpty) 'apiKey': apiKey,
+              if (geminiApiKey.isNotEmpty) 'geminiApiKey': geminiApiKey,
+            }))
+        .timeout(const Duration(minutes: 5));
+    final j = _json(res);
+    final audioStr = j['audio'] as String?;
+    if (audioStr == null || audioStr.isEmpty) {
+      throw ApiException(
+          j['error']?.toString() ?? 'No audio returned.', res.statusCode);
+    }
+    if (audioStr.startsWith('data:')) {
+      final comma = audioStr.indexOf(',');
+      if (comma != -1) {
+        return base64Decode(audioStr.substring(comma + 1));
+      }
+    }
+    return base64Decode(audioStr);
   }
 
   // ---- Workspaces / Databases ----

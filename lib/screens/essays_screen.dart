@@ -187,6 +187,11 @@ class _EssayViewer extends StatelessWidget {
             },
           ),
           IconButton(
+            tooltip: 'Export Audio (.mp3)',
+            icon: const Icon(Icons.audiotrack),
+            onPressed: () => _exportAudio(context),
+          ),
+          IconButton(
             tooltip: 'Export .md',
             icon: const Icon(Icons.ios_share),
             onPressed: () => _exportMd(context),
@@ -201,6 +206,34 @@ class _EssayViewer extends StatelessWidget {
               child: MdWithToc(data: essay.body),
             ),
     );
+  }
+
+  Future<void> _exportAudio(BuildContext context) async {
+    if (essay.body.trim().isEmpty) {
+      showSnack(context, 'This essay has no content to narrate.');
+      return;
+    }
+    showSnack(context, 'Generating audio narration… this may take a moment.');
+    try {
+      final state = context.read<AppState>();
+      final bytes = await state.api.generateTts(text: essay.body);
+      final name = downloadName(
+        title: essay.title,
+        kind: 'Synthesis Essay',
+        date: DateTime.tryParse(essay.updatedAt ?? ''),
+        ext: 'mp3',
+      );
+      final box = context.findRenderObject() as RenderBox?;
+      final origin =
+          box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile.fromData(bytes, mimeType: 'audio/mpeg', name: name)],
+        subject: '${essay.title} (Audio Narration)',
+        sharePositionOrigin: origin,
+      ));
+    } catch (e) {
+      if (context.mounted) showSnack(context, 'Failed to generate audio: $e');
+    }
   }
 
   Future<void> _exportMd(BuildContext context) async {
