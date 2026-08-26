@@ -27,4 +27,4 @@ sign.log
 /output/
 *.pem
 *.key
-.claude/settings.local.json
+.claude/

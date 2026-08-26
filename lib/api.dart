@@ -129,10 +129,10 @@ class ApiClient {
           'type': type,
           'title': title,
           'servesSlug': servesSlug,
-          // Dart 3.10 null-aware map elements: the entry is omitted when the
+          // Dart null-aware map elements: the entry is omitted when the
           // VALUE is null, so the `?` goes on the value, not the key.
-          if (enactsSlug != null) 'enactsSlug': enactsSlug,
-          if (body != null) 'body': body,
+          'enactsSlug': ?enactsSlug,
+          'body': ?body,
         }));
     _json(res);
   }

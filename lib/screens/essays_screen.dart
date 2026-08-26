@@ -213,6 +213,13 @@ class _EssayViewer extends StatelessWidget {
       showSnack(context, 'This essay has no content to narrate.');
       return;
     }
+    // Read the render box BEFORE any await: it is the iPad share-sheet anchor,
+    // and touching the BuildContext after an async gap throws if the widget
+    // was disposed while the file was being generated.
+    final box = context.findRenderObject() as RenderBox?;
+    final origin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+
     showSnack(context, 'Generating audio narration… this may take a moment.');
     try {
       final state = context.read<AppState>();
@@ -223,9 +230,6 @@ class _EssayViewer extends StatelessWidget {
         date: DateTime.tryParse(essay.updatedAt ?? ''),
         ext: 'mp3',
       );
-      final box = context.findRenderObject() as RenderBox?;
-      final origin =
-          box == null ? null : box.localToGlobal(Offset.zero) & box.size;
       await SharePlus.instance.share(ShareParams(
         files: [XFile.fromData(bytes, mimeType: 'audio/mpeg', name: name)],
         subject: '${essay.title} (Audio Narration)',
