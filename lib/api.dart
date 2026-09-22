@@ -211,8 +211,10 @@ class ApiClient {
 
   // ---- Models & chat (for Visual Scribe) ----
 
-  Future<List<ModelInfo>> listModels() async {
-    final res = await http.get(_uri('/api/models'), headers: _headers);
+  Future<List<ModelInfo>> listModels({bool refresh = false}) async {
+    final res = await http.get(
+        _uri('/api/models', {if (refresh) 'refresh': '1'}),
+        headers: _headers);
     final j = _json(res);
     return ((j['models'] as List?) ?? [])
         .map((m) => ModelInfo.fromJson(Map<String, dynamic>.from(m)))

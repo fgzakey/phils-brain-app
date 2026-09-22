@@ -159,14 +159,15 @@ class GraphEdge {
       );
 }
 
-/// A praxis node (theme / goal / project / task) from /api/graph/praxis.
+/// A praxis node (theme / goal / project / task / practice) from /api/graph/praxis.
 class PraxisNode {
   final dynamic id;
   final String slug;
-  final String nodeType; // theme | goal | project | task
+  final String nodeType; // theme | goal | project | task | practice
   final String title;
   final String body;
   final List<String> domains;
+  final Map<String, dynamic> meta;
 
   PraxisNode({
     this.id,
@@ -175,7 +176,20 @@ class PraxisNode {
     required this.title,
     this.body = '',
     this.domains = const [],
+    this.meta = const {},
   });
+
+  bool get isVirtue =>
+      nodeType == 'practice' ||
+      meta['kind'] == 'virtue' ||
+      slug.startsWith('practices/virtue-');
+
+  VirtueMeta? get virtueMeta {
+    if (!isVirtue && !meta.containsKey('virtue_en') && !meta.containsKey('sphere')) {
+      return null;
+    }
+    return VirtueMeta.fromJson(meta);
+  }
 
   factory PraxisNode.fromJson(Map<String, dynamic> j) => PraxisNode(
         id: j['id'],
@@ -184,6 +198,43 @@ class PraxisNode {
         title: j['title']?.toString() ?? '(untitled)',
         body: j['body']?.toString() ?? '',
         domains: ((j['domains'] as List?) ?? []).map((e) => e.toString()).toList(),
+        meta: (j['meta'] as Map?)?.cast<String, dynamic>() ?? const {},
+      );
+}
+
+class VirtueMeta {
+  final String sphere;
+  final String virtueEn;
+  final String virtueEs;
+  final String deficiencyEn;
+  final String deficiencyEs;
+  final String excessEn;
+  final String excessEs;
+  final String poeticEn;
+  final String poeticEs;
+
+  VirtueMeta({
+    this.sphere = '',
+    this.virtueEn = '',
+    this.virtueEs = '',
+    this.deficiencyEn = '',
+    this.deficiencyEs = '',
+    this.excessEn = '',
+    this.excessEs = '',
+    this.poeticEn = '',
+    this.poeticEs = '',
+  });
+
+  factory VirtueMeta.fromJson(Map<String, dynamic> j) => VirtueMeta(
+        sphere: j['sphere']?.toString() ?? '',
+        virtueEn: j['virtue_en']?.toString() ?? j['virtueEn']?.toString() ?? '',
+        virtueEs: j['virtue_es']?.toString() ?? j['virtueEs']?.toString() ?? '',
+        deficiencyEn: j['deficiency_en']?.toString() ?? j['deficiencyEn']?.toString() ?? '',
+        deficiencyEs: j['deficiency_es']?.toString() ?? j['deficiencyEs']?.toString() ?? '',
+        excessEn: j['excess_en']?.toString() ?? j['excessEn']?.toString() ?? '',
+        excessEs: j['excess_es']?.toString() ?? j['excessEs']?.toString() ?? '',
+        poeticEn: j['poetic_en']?.toString() ?? j['poeticEn']?.toString() ?? '',
+        poeticEs: j['poetic_es']?.toString() ?? j['poeticEs']?.toString() ?? '',
       );
 }
 

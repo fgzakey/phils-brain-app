@@ -13,7 +13,7 @@ class AppState extends ChangeNotifier {
   final ApiClient api = ApiClient();
 
   bool loadedPrefs = false;
-  String model = 'google/gemini-2.5-flash';
+  String model = 'gemini-3.8-flash';
   String scribeImageModel = 'google/gemini-2.5-flash-image';
   double temperature = 0.4;
 
@@ -55,7 +55,14 @@ class AppState extends ChangeNotifier {
     api.password = p.getString('password') ?? '';
     api.apiKey = p.getString('apiKey') ?? '';
     api.geminiApiKey = p.getString('geminiApiKey') ?? '';
-    model = p.getString('model') ?? model;
+    final savedModel = p.getString('model');
+    if (savedModel == null ||
+        savedModel == 'google/gemini-2.5-flash' ||
+        savedModel == 'google/gemini-2.0-flash') {
+      model = 'gemini-3.8-flash';
+    } else {
+      model = savedModel;
+    }
     scribeImageModel = p.getString('scribeImageModel') ?? scribeImageModel;
     temperature = p.getDouble('temperature') ?? 0.4;
     mdScale = p.getDouble('mdScale') ?? 1.0;
@@ -242,9 +249,9 @@ class AppState extends ChangeNotifier {
 
   // ---- Models ----
 
-  Future<void> refreshModels() async {
+  Future<void> refreshModels({bool forceRefresh = false}) async {
     try {
-      models = await api.listModels();
+      models = await api.listModels(refresh: forceRefresh);
       notifyListeners();
     } catch (_) {}
   }
