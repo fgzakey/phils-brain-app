@@ -24,7 +24,7 @@ The repo ships only `pubspec.yaml` + `lib/`; CI runs `flutter create
 
 ## First-run setup
 
-1. Server URL: the Phils Library Space's direct URL (e.g. `https://fgza-book-dashboard.hf.space`).
+1. Server URL: the Phils Library Space's direct URL (e.g. `https://fgza-phils-library.hf.space`).
 2. App password: the same `APP_PASSWORD` as the web login.
 3. Save & test connection, then pick a model for Visual Scribe.
 
